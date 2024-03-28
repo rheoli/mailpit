@@ -4,6 +4,7 @@ import (
 	"github.com/axllent/mailpit/internal/htmlcheck"
 	"github.com/axllent/mailpit/internal/linkcheck"
 	"github.com/axllent/mailpit/internal/spamassassin"
+	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/storage"
 )
 
@@ -54,3 +55,6 @@ type LinkCheckResponse = linkcheck.Response
 
 // SpamAssassinResponse summary
 type SpamAssassinResponse = spamassassin.Result
+
+// SpamAssassinResponse summary
+type RspamdResponse = rspamd.Result

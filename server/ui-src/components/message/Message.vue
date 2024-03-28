@@ -5,6 +5,7 @@ import Headers from './Headers.vue'
 import HTMLCheck from './HTMLCheck.vue'
 import LinkCheck from './LinkCheck.vue'
 import SpamAssassin from './SpamAssassin.vue'
+import Rspamd from './Rspamd.vue'
 import Prism from 'prismjs'
 import Tags from 'bootstrap5-tags'
 import { Tooltip } from 'bootstrap'
@@ -22,6 +23,7 @@ export default {
 		HTMLCheck,
 		LinkCheck,
 		SpamAssassin,
+		Rspamd,
 	},
 
 	mixins: [commonMixins],
@@ -38,6 +40,7 @@ export default {
 			htmlScoreColor: false,
 			linkCheckErrors: false,
 			spamScore: false,
+			rspamScore: false,
 			spamScoreColor: false,
 			showMobileButtons: false,
 			showUnsubscribe: false,
@@ -462,6 +465,17 @@ export default {
 								</span>
 							</button>
 						</li>
+						<li v-if="mailbox.uiConfig.Rspamd">
+							<button class="dropdown-item" id="nav-spam-check-tab" data-bs-toggle="tab"
+								data-bs-target="#nav-rspamd-check" type="button" role="tab" aria-controls="nav-html"
+								aria-selected="false">
+								Rspamd Analysis
+								<span class="badge rounded-pill float-end" :class="spamScoreColor"
+									v-if="rspamScore !== false">
+									<small>{{ rspamScore }}</small>
+								</span>
+							</button>
+						</li>
 					</ul>
 				</div>
 				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-html-check-tab"
@@ -487,6 +501,14 @@ export default {
 					Spam Analysis
 					<span class="badge rounded-pill" :class="spamScoreColor" v-if="spamScore !== false">
 						<small>{{ spamScore }}</small>
+					</span>
+				</button>
+				<button class="d-none d-xl-inline-block nav-link position-relative" id="nav-rspamd-check-tab"
+					data-bs-toggle="tab" data-bs-target="#nav-rspamd-check" type="button" role="tab" aria-controls="nav-html"
+					aria-selected="false" v-if="mailbox.uiConfig.Rspamd">
+					Rspamd Analysis
+					<span class="badge rounded-pill" :class="spamScoreColor" v-if="rspamScore !== false">
+						<small>{{ rspamScore }}</small>
 					</span>
 				</button>
 
@@ -537,6 +559,11 @@ export default {
 			<div class="tab-pane fade" id="nav-spam-check" role="tabpanel" aria-labelledby="nav-spam-check-tab"
 				tabindex="0">
 				<SpamAssassin v-if="mailbox.uiConfig.SpamAssassin" :message="message" @setSpamScore="(n) => spamScore = n"
+					@set-badge-style="(v) => spamScoreColor = v" />
+			</div>
+			<div class="tab-pane fade" id="nav-rspamd-check" role="tabpanel" aria-labelledby="nav-rspamd-check-tab"
+				tabindex="0">
+				<Rspamd v-if="mailbox.uiConfig.Rspamd" :message="message" @setRspamScore="(n) => rspamScore = n"
 					@set-badge-style="(v) => spamScoreColor = v" />
 			</div>
 			<div class="tab-pane fade" id="nav-link-check" role="tabpanel" aria-labelledby="nav-html-check-tab"

@@ -16,6 +16,7 @@ import (
 	"github.com/axllent/mailpit/internal/linkcheck"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
+	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/storage"
 	"github.com/axllent/mailpit/internal/tools"
 	"github.com/axllent/mailpit/server/smtpd"
@@ -812,6 +813,56 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	followRedirects := f == "true" || f == "1"
 
 	summary, err := linkcheck.RunTests(msg, followRedirects)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
+
+	bytes, _ := json.Marshal(summary)
+	w.Header().Add("Content-Type", "application/json")
+	_, _ = w.Write(bytes)
+}
+
+// SpamAssassinCheck returns a summary of SpamAssassin results (if enabled)
+func RspamdCheck(w http.ResponseWriter, r *http.Request) {
+	// swagger:route GET /api/v1/message/{ID}/rspamd-check Other SpamAssassinCheck
+	//
+	// # SpamAssassin check (beta)
+	//
+	// Returns the SpamAssassin (if enabled) summary of the message.
+	//
+	// NOTE: This feature is currently in beta and is documented for reference only.
+	// Please do not integrate with it (yet) as there may be changes.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//		200: SpamAssassinResponse
+	//		default: ErrorResponse
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if id == "latest" {
+		var err error
+		id, err = storage.LatestID(r)
+		if err != nil {
+			w.WriteHeader(404)
+			fmt.Fprint(w, err.Error())
+			return
+		}
+	}
+
+	msg, err := storage.GetMessageRaw(id)
+	if err != nil {
+		fourOFour(w)
+		return
+	}
+
+	summary, err := rspamd.Check(msg)
 	if err != nil {
 		httpError(w, err.Error())
 		return

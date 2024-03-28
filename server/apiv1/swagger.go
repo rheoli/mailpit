@@ -156,6 +156,16 @@ type spamAssassinCheckParams struct {
 	ID string
 }
 
+// swagger:parameters SpamAssassinCheck
+type rspamdCheckParams struct {
+	// Message database ID or "latest"
+	//
+	// in: path
+	// description: Message database ID or "latest"
+	// required: true
+	ID string
+}
+
 // Binary data response inherits the attachment's content type
 // swagger:response BinaryResponse
 type binaryResponse string

@@ -15,6 +15,7 @@ import (
 	"github.com/axllent/mailpit/internal/auth"
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
+	"github.com/axllent/mailpit/internal/rspamd"
 	"github.com/axllent/mailpit/internal/tools"
 	"gopkg.in/yaml.v3"
 )
@@ -131,6 +132,9 @@ var (
 
 	// EnableSpamAssassin must be either <host>:<port> or "postmark"
 	EnableSpamAssassin string
+
+	// EnableSpamAssassin must be <host>:<port>
+	EnableRspamd string
 
 	// WebhookURL for calling
 	WebhookURL string
@@ -353,6 +357,15 @@ func VerifyConfig() error {
 
 		if err := spamassassin.Ping(); err != nil {
 			logger.Log().Warnf("[spamassassin] ping: %s", err.Error())
+		}
+	}
+
+	if EnableRspamd != "" {
+		rspamd.SetService(EnableRspamd)
+		logger.Log().Infof("[rspamd] enabled via %s", EnableRspamd)
+
+		if err := rspamd.Ping(); err != nil {
+			logger.Log().Warnf("[rspamd] ping: %s", err.Error())
 		}
 	}
 

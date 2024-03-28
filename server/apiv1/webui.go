@@ -33,6 +33,9 @@ type webUIConfiguration struct {
 	// Whether SpamAssassin is enabled
 	SpamAssassin bool
 
+	// Whether SpamAssassin is enabled
+	Rspamd bool
+
 	// Whether messages with duplicate IDs are ignored
 	DuplicatesIgnored bool
 }
@@ -67,6 +70,7 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 
 	conf.DisableHTMLCheck = config.DisableHTMLCheck
 	conf.SpamAssassin = config.EnableSpamAssassin != ""
+	conf.Rspamd = config.EnableRspamd != ""
 	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
 
 	bytes, _ := json.Marshal(conf)
