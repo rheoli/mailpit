@@ -11,7 +11,6 @@ import (
 
         "net/http"
         "encoding/json"
-	"github.com/axllent/mailpit/internal/rspamd/spamc"
 )
 
 var (
@@ -86,15 +85,6 @@ func Ping() error {
 	if service == "rspamd" {
 		return nil
 	}
-
-	var client *spamc.Client
-	if strings.HasPrefix("unix:", service) {
-		client = spamc.NewUnix(strings.TrimLeft(service, "unix:"))
-	} else {
-		client = spamc.NewTCP(service, timeout)
-	}
-
-	return client.Ping()
 }
 
 // Check will return a Result
