@@ -137,7 +137,7 @@ func apiRoutes() *mux.Router {
 		r.HandleFunc(config.Webroot+"api/v1/message/{id}/sa-check", middleWareFunc(apiv1.SpamAssassinCheck)).Methods("GET")
 	}
 	if config.EnableRspamd != "" {
-		r.HandleFunc(config.Webroot+"api/v1/message/{id}/rspamd", middleWareFunc(apiv1.RspamdCheck)).Methods("GET")
+		r.HandleFunc(config.Webroot+"api/v1/message/{id}/rspamd-check", middleWareFunc(apiv1.RspamdCheck)).Methods("GET")
 	}
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}", middleWareFunc(apiv1.GetMessage)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/info", middleWareFunc(apiv1.AppInfo)).Methods("GET")

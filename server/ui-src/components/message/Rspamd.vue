@@ -44,7 +44,7 @@ export default {
 			let self = this
 
 			// ignore any error, do not show loader
-			axios.get(self.resolve('/api/v1/message/' + self.message.ID + '/rspamd'), null)
+			axios.get(self.resolve('/api/v1/message/' + self.message.ID + '/rspamd-check'), null)
 				.then(function (result) {
 					self.check = result.data
 					self.error = false

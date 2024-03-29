@@ -366,6 +366,43 @@
         }
       }
     },
+    "/api/v1/message/{ID}/rspamd-check": {
+      "get": {
+        "description": "Returns the Rspamd (if enabled) summary of the message.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "http",
+          "https"
+        ],
+        "tags": [
+          "Other"
+        ],
+        "summary": "Rspamd check (beta)",
+        "operationId": "RspamdCheck",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Message database ID or \"latest\"",
+            "name": "ID",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RspamdResponse",
+            "schema": {
+              "$ref": "#/definitions/RspamdResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/message/{ID}/sa-check": {
       "get": {
         "description": "Returns the SpamAssassin (if enabled) summary of the message.\n\nNOTE: This feature is currently in beta and is documented for reference only.\nPlease do not integrate with it (yet) as there may be changes.",

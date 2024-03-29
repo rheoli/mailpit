@@ -823,13 +823,13 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 }
 
-// SpamAssassinCheck returns a summary of SpamAssassin results (if enabled)
+// RspamdCheck returns a summary of Rspamd results (if enabled)
 func RspamdCheck(w http.ResponseWriter, r *http.Request) {
-	// swagger:route GET /api/v1/message/{ID}/rspamd-check Other SpamAssassinCheck
+	// swagger:route GET /api/v1/message/{ID}/rspamd-check Other RspamdCheck
 	//
-	// # SpamAssassin check (beta)
+	// # Rspamd check (beta)
 	//
-	// Returns the SpamAssassin (if enabled) summary of the message.
+	// Returns the Rspamd (if enabled) summary of the message.
 	//
 	// NOTE: This feature is currently in beta and is documented for reference only.
 	// Please do not integrate with it (yet) as there may be changes.
@@ -840,7 +840,7 @@ func RspamdCheck(w http.ResponseWriter, r *http.Request) {
 	//	Schemes: http, https
 	//
 	//	Responses:
-	//		200: SpamAssassinResponse
+	//		200: RspamdResponse
 	//		default: ErrorResponse
 
 	vars := mux.Vars(r)

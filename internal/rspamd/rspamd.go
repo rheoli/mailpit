@@ -5,7 +5,6 @@ package rspamd
 import (
 	"errors"
 	"math"
-	"strings"
         "fmt"
         "bytes"
 
@@ -85,6 +84,7 @@ func Ping() error {
 	if service == "rspamd" {
 		return nil
 	}
+	return nil
 }
 
 // Check will return a Result
