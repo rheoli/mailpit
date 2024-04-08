@@ -1,6 +1,6 @@
 module github.com/axllent/mailpit
 
-go 1.20
+go 1.21.1
 
 require (
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
@@ -49,6 +49,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/reiver/go-oi v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/rheoli/defango v0.0.0-20240408214209-ee113d7cfe46 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
