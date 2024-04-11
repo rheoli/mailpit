@@ -1,6 +1,8 @@
 module github.com/axllent/mailpit
 
-go 1.22
+go 1.21.2
+
+toolchain go1.22.1
 
 require (
 	github.com/GuiaBolso/darwin v0.0.0-20191218124601-fd6d2aa3d244
@@ -16,6 +18,7 @@ require (
 	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/mhale/smtpd v0.8.2
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
+	github.com/rheoli/defango v0.0.0-20240408214209-ee113d7cfe46
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
@@ -35,6 +38,7 @@ require (
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/cznic/ql v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/edoardottt/defango v0.0.1 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect

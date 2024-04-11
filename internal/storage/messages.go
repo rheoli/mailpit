@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"strings"
 	"time"
+	"regexp"
 
 	"github.com/axllent/mailpit/config"
 	"github.com/axllent/mailpit/internal/logger"
@@ -20,7 +21,11 @@ import (
 	"github.com/jhillyerd/enmime"
 	"github.com/leporo/sqlf"
 	"github.com/lithammer/shortuuid/v4"
+	"github.com/PuerkitoBio/goquery"
+	"github.com/rheoli/defango"
 )
+
+var linkRe = regexp.MustCompile(`(?m)\b(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:'!\/~+#-]*[\w@?^=%&\/~+#-])`)
 
 // Store will save an email to the database tables.
 // Returns the database ID of the saved message.
@@ -277,7 +282,11 @@ func GetMessage(id string) (*Message, error) {
 		Text:       env.Text,
 	}
 
-	obj.HTML = env.HTML
+	//obj.HTML = env.HTML
+	allLinks := extractHTMLLinks(env.HTML)
+	logger.Log().Errorf("[links] %s", allLinks)
+	replacer := strings.NewReplacer(allLinks...)
+	obj.HTML = replacer.Replace(env.HTML)
 	obj.Inline = []Attachment{}
 	obj.Attachments = []Attachment{}
 
@@ -617,3 +626,60 @@ func DeleteAllMessages() error {
 
 	return err
 }
+
+func extractHTMLLinks(html string) []string {
+        links := []string{}
+
+        reader := strings.NewReader(html)
+
+        // Load the HTML document
+        doc, err := goquery.NewDocumentFromReader(reader)
+        if err != nil {
+                return links
+        }
+
+        aLinks := doc.Find("a[href]").Nodes
+        for _, link := range aLinks {
+                l, err := tools.GetHTMLAttributeVal(link, "href")
+                if err == nil && linkRe.MatchString(l) {
+                        links = append(links, l)
+			u, err := defango.URL(l)
+			if err == nil {
+				links = append(links, u)
+			} else {
+				links = append(links, "__error__")
+			}
+                }
+        }
+
+        cssLinks := doc.Find("link[rel=\"stylesheet\"]").Nodes
+        for _, link := range cssLinks {
+                l, err := tools.GetHTMLAttributeVal(link, "href")
+                if err == nil && linkRe.MatchString(l) {
+                        links = append(links, l)
+			u, err := defango.URL(l)
+			if err == nil {
+				links = append(links, u)
+			} else {
+				links = append(links, "__error__")
+			}
+                }
+        }
+
+        imgLinks := doc.Find("img[src]").Nodes
+        for _, link := range imgLinks {
+                l, err := tools.GetHTMLAttributeVal(link, "src")
+                if err == nil && linkRe.MatchString(l) {
+                        links = append(links, l)
+			u, err := defango.URL(l)
+			if err == nil {
+				links = append(links, u)
+			} else {
+				links = append(links, "__error__")
+			}
+                }
+        }
+
+        return links
+}
+
