@@ -122,7 +122,10 @@ export default {
 					value: p,
 					color: c
 				},
-			];
+			]
+		},
+		scoreColor: function() {
+			return this.graphSections[0].color
 		},
 	}
 }
