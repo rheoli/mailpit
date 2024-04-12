@@ -2,6 +2,35 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.16.0]
+
+### Chore
+- Update caniemail test database
+- Update node dependencies
+- Update Go dependencies
+- Switch database flag/env to `--database` / `MP_DATABASE`
+
+### Feature
+- Search support for before: and after: dates ([#252](https://github.com/axllent/mailpit/issues/252))
+- Add optional tenant ID to isolate data in shared databases ([#254](https://github.com/axllent/mailpit/issues/254))
+- Option to use rqlite database storage ([#254](https://github.com/axllent/mailpit/issues/254))
+
+### Fix
+- Remove duplicated authentication check ([#276](https://github.com/axllent/mailpit/issues/276))
+- Prevent conditional JS error when global mailbox tag list is modified via auto/plus-address tagging while viewing a message
+- Extract plus addresses from email addresses only, not names
+
+
+## [v1.15.1]
+
+### Chore
+- Code cleanup, remove redundant functionality
+- Add labels to Docker image ([#267](https://github.com/axllent/mailpit/issues/267))
+
+### Feature
+- Add readyz subcommand for Docker healthcheck ([#270](https://github.com/axllent/mailpit/issues/270))
+
+
 ## [v1.15.0]
 
 ### Chore

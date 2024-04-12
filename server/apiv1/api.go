@@ -68,7 +68,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = len(messages) // legacy - now undocumented in API specs
+	res.Count = float64(len(messages)) // legacy - now undocumented in API specs
 	res.Total = stats.Total
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
@@ -110,6 +110,11 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//	    required: false
 	//	    type: integer
 	//	    default: 50
+	//	  + name: tz
+	//	    in: query
+	//	    description: Timezone for `before:` & `after:` queries, eg: "Pacific/Auckland"
+	//	    required: false
+	//	    type: string
 	//
 	//	Responses:
 	//		200: MessagesSummaryResponse
@@ -122,7 +127,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	start, limit := getStartLimit(r)
 
-	messages, results, err := storage.Search(search, start, limit)
+	messages, results, err := storage.Search(search, r.URL.Query().Get("tz"), start, limit)
 	if err != nil {
 		httpError(w, err.Error())
 		return
@@ -134,9 +139,9 @@ func Search(w http.ResponseWriter, r *http.Request) {
 
 	res.Start = start
 	res.Messages = messages
-	res.Count = len(messages) // legacy - now undocumented in API specs
-	res.Total = stats.Total   // total messages in mailbox
-	res.MessagesCount = results
+	res.Count = float64(len(messages)) // legacy - now undocumented in API specs
+	res.Total = stats.Total            // total messages in mailbox
+	res.MessagesCount = float64(results)
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
@@ -174,7 +179,7 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DeleteSearch(search); err != nil {
+	if err := storage.DeleteSearch(search, r.URL.Query().Get("tz")); err != nil {
 		httpError(w, err.Error())
 		return
 	}
@@ -338,7 +343,11 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(m.Header)
+	bytes, err := json.Marshal(m.Header)
+	if err != nil {
+		httpError(w, err.Error())
+		return
+	}
 
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(bytes)
@@ -429,11 +438,9 @@ func DeleteMessages(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		for _, id := range data.IDs {
-			if err := storage.DeleteOneMessage(id); err != nil {
-				httpError(w, err.Error())
-				return
-			}
+		if err := storage.DeleteMessages(data.IDs); err != nil {
+			httpError(w, err.Error())
+			return
 		}
 	}
 
@@ -723,9 +730,6 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	//
 	// Returns the summary of the message HTML checker.
 	//
-	// NOTE: This feature is currently in beta and is documented for reference only.
-	// Please do not integrate with it (yet) as there may be changes.
-	//
 	//	Produces:
 	//	- application/json
 	//
@@ -777,9 +781,6 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	// # Link check (beta)
 	//
 	// Returns the summary of the message Link checker.
-	//
-	// NOTE: This feature is currently in beta and is documented for reference only.
-	// Please do not integrate with it (yet) as there may be changes.
 	//
 	//	Produces:
 	//	- application/json

@@ -27,8 +27,12 @@ var (
 	// HTTPListen to listen on <interface>:<port>
 	HTTPListen = "[::]:8025"
 
-	// DataFile for mail (optional)
-	DataFile string
+	// Database for mail (optional)
+	Database string
+
+	// TenantID is an optional prefix to be applied to all database tables,
+	// allowing multiple isolated instances of Mailpit to share a database.
+	TenantID = ""
 
 	// MaxMessages is the maximum number of messages a mailbox can have (auto-pruned every minute)
 	MaxMessages = 500
@@ -79,9 +83,6 @@ var (
 
 	// IgnoreDuplicateIDs will skip messages with the same ID
 	IgnoreDuplicateIDs bool
-
-	// DisableHTMLCheck used to disable the HTML check in bother the API and web UI
-	DisableHTMLCheck = false
 
 	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
 	BlockRemoteCSSAndFonts = false
@@ -153,6 +154,9 @@ var (
 
 	// RepoBinaryName on Github for updater
 	RepoBinaryName = "mailpit"
+
+	// DisableHTMLCheck DEPRECATED 2024/04/13 - kept here to display console warning only
+	DisableHTMLCheck = false
 )
 
 // AutoTag struct for auto-tagging
@@ -189,8 +193,18 @@ func VerifyConfig() error {
 		cssFontRestriction, cssFontRestriction,
 	)
 
-	if DataFile != "" && isDir(DataFile) {
-		DataFile = filepath.Join(DataFile, "mailpit.db")
+	if Database != "" && isDir(Database) {
+		Database = filepath.Join(Database, "mailpit.db")
+	}
+
+	TenantID = strings.TrimSpace(TenantID)
+	if TenantID != "" {
+		logger.Log().Infof("[db] using tenant \"%s\"", TenantID)
+		re := regexp.MustCompile(`[^a-zA-Z0-9\_]`)
+		TenantID = re.ReplaceAllString(TenantID, "_")
+		if !strings.HasSuffix(TenantID, "_") {
+			TenantID = TenantID + "_"
+		}
 	}
 
 	re := regexp.MustCompile(`.*:\d+$`)
@@ -349,6 +363,11 @@ func VerifyConfig() error {
 
 	if WebhookURL != "" && !isValidURL(WebhookURL) {
 		return fmt.Errorf("webhook URL does not appear to be a valid URL (%s)", WebhookURL)
+	}
+
+	// DEPRECATED 2024/04/13
+	if DisableHTMLCheck {
+		logger.Log().Warn("--disable-html-check has been deprecated and is no longer used")
 	}
 
 	if EnableSpamAssassin != "" {

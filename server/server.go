@@ -129,9 +129,7 @@ func apiRoutes() *mux.Router {
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/headers", middleWareFunc(apiv1.GetHeaders)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/raw", middleWareFunc(apiv1.DownloadRaw)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/release", middleWareFunc(apiv1.ReleaseMessage)).Methods("POST")
-	if !config.DisableHTMLCheck {
-		r.HandleFunc(config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck)).Methods("GET")
-	}
+	r.HandleFunc(config.Webroot+"api/v1/message/{id}/html-check", middleWareFunc(apiv1.HTMLCheck)).Methods("GET")
 	r.HandleFunc(config.Webroot+"api/v1/message/{id}/link-check", middleWareFunc(apiv1.LinkCheck)).Methods("GET")
 	if config.EnableSpamAssassin != "" {
 		r.HandleFunc(config.Webroot+"api/v1/message/{id}/sa-check", middleWareFunc(apiv1.SpamAssassinCheck)).Methods("GET")
@@ -180,20 +178,6 @@ func middleWareFunc(fn http.HandlerFunc) http.HandlerFunc {
 			w.Header().Set("Access-Control-Allow-Origin", AccessControlAllowOrigin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "*")
-		}
-
-		if auth.UICredentials != nil {
-			user, pass, ok := r.BasicAuth()
-
-			if !ok {
-				basicAuthResponse(w)
-				return
-			}
-
-			if !auth.UICredentials.Match(user, pass) {
-				basicAuthResponse(w)
-				return
-			}
 		}
 
 		if auth.UICredentials != nil {
