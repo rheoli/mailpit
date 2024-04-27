@@ -96,8 +96,6 @@ func Listen() {
 	// Mark the application here as ready
 	isReady.Store(true)
 
-	logger.Log().Infof("[http] starting on %s", config.HTTPListen)
-
 	server := &http.Server{
 		Addr:         config.HTTPListen,
 		ReadTimeout:  30 * time.Second,
@@ -105,11 +103,20 @@ func Listen() {
 	}
 
 	if config.UITLSCert != "" && config.UITLSKey != "" {
+		logger.Log().Infof("[http] starting on %s (TLS)", config.HTTPListen)
 		logger.Log().Infof("[http] accessible via https://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey))
+		if err := server.ListenAndServeTLS(config.UITLSCert, config.UITLSKey); err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
+
 	} else {
+		logger.Log().Infof("[http] starting on %s", config.HTTPListen)
 		logger.Log().Infof("[http] accessible via http://%s%s", logger.CleanHTTPIP(config.HTTPListen), config.Webroot)
-		logger.Log().Fatal(server.ListenAndServe())
+		if err := server.ListenAndServe(); err != nil {
+			storage.Close()
+			logger.Log().Fatal(err)
+		}
 	}
 }
 

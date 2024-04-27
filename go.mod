@@ -1,17 +1,17 @@
 module github.com/axllent/mailpit
 
-go 1.21.2
+go 1.22.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/axllent/semver v0.0.1
-	github.com/disintegration/imaging v1.6.2
-	github.com/gomarkdown/markdown v0.0.0-20240328165702-4d01890c35c0
+	github.com/gomarkdown/markdown v0.0.0-20240419095408-642f0ee99ae2
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/jhillyerd/enmime v1.2.0
 	github.com/klauspost/compress v1.17.8
+	github.com/kovidgoyal/imaging v1.6.3
 	github.com/leporo/sqlf v1.4.0
 	github.com/lithammer/shortuuid/v4 v4.0.0
 	github.com/mhale/smtpd v0.8.2
@@ -27,7 +27,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.29.6
+	modernc.org/sqlite v1.29.8
 )
 
 require (
@@ -59,7 +59,7 @@ require (
 	golang.org/x/sys v0.19.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b // indirect
-	modernc.org/libc v1.49.3 // indirect
+	modernc.org/libc v1.50.2 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/strutil v1.2.0 // indirect

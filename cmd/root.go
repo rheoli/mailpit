@@ -34,14 +34,15 @@ Documentation:
 			os.Exit(1)
 		}
 		if err := storage.InitDB(); err != nil {
-			logger.Log().Error(err.Error())
+			logger.Log().Fatal(err.Error())
 			os.Exit(1)
 		}
 
 		go server.Listen()
 
 		if err := smtpd.Listen(); err != nil {
-			logger.Log().Error(err.Error())
+			storage.Close()
+			logger.Log().Fatal(err.Error())
 			os.Exit(1)
 		}
 	},
@@ -116,8 +117,9 @@ func init() {
 	rootCmd.Flags().BoolVar(&smtpd.DisableReverseDNS, "smtp-disable-rdns", smtpd.DisableReverseDNS, "Disable SMTP reverse DNS lookups")
 
 	// SMTP relay
-	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP configuration file to allow releasing messages")
-	rootCmd.Flags().BoolVar(&config.SMTPRelayAllIncoming, "smtp-relay-all", config.SMTPRelayAllIncoming, "Relay all incoming messages via external SMTP server (caution!)")
+	rootCmd.Flags().StringVar(&config.SMTPRelayConfigFile, "smtp-relay-config", config.SMTPRelayConfigFile, "SMTP relay configuration file to allow releasing messages")
+	rootCmd.Flags().BoolVar(&config.SMTPRelayAll, "smtp-relay-all", config.SMTPRelayAll, "Auto-relay all new messages via external SMTP server (caution!)")
+	rootCmd.Flags().StringVar(&config.SMTPRelayMatching, "smtp-relay-matching", config.SMTPRelayMatching, "Auto-relay new messages to only matching recipients (regular expression)")
 
 	// POP3 server
 	rootCmd.Flags().StringVar(&config.POP3Listen, "pop3", config.POP3Listen, "POP3 server bind interface and port")
@@ -126,8 +128,9 @@ func init() {
 	rootCmd.Flags().StringVar(&config.POP3TLSKey, "pop3-tls-key", config.POP3TLSKey, "Optional TLS key for POP3 server - requires pop3-tls-cert")
 
 	// Tagging
-	rootCmd.Flags().StringVarP(&config.SMTPCLITags, "tag", "t", config.SMTPCLITags, "Tag new messages matching filters")
-	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "Convert new tags automatically to TitleCase")
+	rootCmd.Flags().StringVarP(&config.CLITagsArg, "tag", "t", config.CLITagsArg, "Tag new messages matching filters")
+	rootCmd.Flags().StringVar(&config.TagsConfig, "tags-config", config.TagsConfig, "Load tags filters from yaml configuration file")
+	rootCmd.Flags().BoolVar(&tools.TagsTitleCase, "tags-title-case", tools.TagsTitleCase, "TitleCase new tags generated from plus-addresses and X-Tags")
 
 	// Webhook
 	rootCmd.Flags().StringVar(&config.WebhookURL, "webhook-url", config.WebhookURL, "Send a webhook request for new messages")
@@ -253,8 +256,9 @@ func initConfigFromEnv() {
 	// SMTP relay
 	config.SMTPRelayConfigFile = os.Getenv("MP_SMTP_RELAY_CONFIG")
 	if getEnabledFromEnv("MP_SMTP_RELAY_ALL") {
-		config.SMTPRelayAllIncoming = true
+		config.SMTPRelayAll = true
 	}
+	config.SMTPRelayMatching = os.Getenv("MP_SMTP_RELAY_MATCHING")
 	config.SMTPRelayConfig = config.SMTPRelayConfigStruct{}
 	config.SMTPRelayConfig.Host = os.Getenv("MP_SMTP_RELAY_HOST")
 	if len(os.Getenv("MP_SMTP_RELAY_PORT")) > 0 {
@@ -281,12 +285,9 @@ func initConfigFromEnv() {
 	config.POP3TLSKey = os.Getenv("MP_POP3_TLS_KEY")
 
 	// Tagging
-	if len(os.Getenv("MP_TAG")) > 0 {
-		config.SMTPCLITags = os.Getenv("MP_TAG")
-	}
-	if getEnabledFromEnv("MP_TAGS_TITLE_CASE") {
-		tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
-	}
+	config.CLITagsArg = os.Getenv("MP_TAG")
+	config.TagsConfig = os.Getenv("MP_TAGS_CONFIG")
+	tools.TagsTitleCase = getEnabledFromEnv("MP_TAGS_TITLE_CASE")
 
 	// Webhook
 	if len(os.Getenv("MP_WEBHOOK_URL")) > 0 {

@@ -87,14 +87,17 @@ var (
 	// BlockRemoteCSSAndFonts used to disable remote CSS & fonts
 	BlockRemoteCSSAndFonts = false
 
-	// SMTPCLITags is used to map the CLI args
-	SMTPCLITags string
+	// CLITagsArg is used to map the CLI args
+	CLITagsArg string
 
 	// ValidTagRegexp represents a valid tag
 	ValidTagRegexp = regexp.MustCompile(`^([a-zA-Z0-9\-\ \_\.]){1,}$`)
 
-	// SMTPTags are expressions to apply tags to new mail
-	SMTPTags []AutoTag
+	// TagsConfig is a yaml file to pre-load tags
+	TagsConfig string
+
+	// TagFilters are used to apply tags to new mail
+	TagFilters []autoTag
 
 	// SMTPRelayConfigFile to parse a yaml file and store config of relay SMTP server
 	SMTPRelayConfigFile string
@@ -115,9 +118,15 @@ var (
 	// ReleaseEnabled is whether message releases are enabled, requires a valid SMTPRelayConfigFile
 	ReleaseEnabled = false
 
-	// SMTPRelayAllIncoming is whether to relay all incoming messages via pre-configured SMTP server.
+	// SMTPRelayAll is whether to relay all incoming messages via pre-configured SMTP server.
 	// Use with extreme caution!
-	SMTPRelayAllIncoming = false
+	SMTPRelayAll = false
+
+	// SMTPRelayMatching if set, will auto-release to recipients matching this regular expression
+	SMTPRelayMatching string
+
+	// SMTPRelayMatchingRegexp is the compiled version of SMTPRelayMatching
+	SMTPRelayMatchingRegexp *regexp.Regexp
 
 	// POP3Listen address - if set then Mailpit will start the POP3 server and listen on this address
 	POP3Listen = "[::]:1110"
@@ -160,9 +169,9 @@ var (
 )
 
 // AutoTag struct for auto-tagging
-type AutoTag struct {
-	Tag   string
+type autoTag struct {
 	Match string
+	Tags  []string
 }
 
 // SMTPRelayConfigStruct struct for parsing yaml & storing variables
@@ -219,7 +228,7 @@ func VerifyConfig() error {
 		UIAuthFile = filepath.Clean(UIAuthFile)
 
 		if !isFile(UIAuthFile) {
-			return fmt.Errorf("[ui] HTTP password file not found: %s", UIAuthFile)
+			return fmt.Errorf("[ui] HTTP password file not found or readable: %s", UIAuthFile)
 		}
 
 		b, err := os.ReadFile(UIAuthFile)
@@ -241,11 +250,11 @@ func VerifyConfig() error {
 		UITLSKey = filepath.Clean(UITLSKey)
 
 		if !isFile(UITLSCert) {
-			return fmt.Errorf("[ui] TLS certificate not found: %s", UITLSCert)
+			return fmt.Errorf("[ui] TLS certificate not found or readable: %s", UITLSCert)
 		}
 
 		if !isFile(UITLSKey) {
-			return fmt.Errorf("[ui] TLS key not found: %s", UITLSKey)
+			return fmt.Errorf("[ui] TLS key not found or readable: %s", UITLSKey)
 		}
 	}
 
@@ -258,11 +267,11 @@ func VerifyConfig() error {
 		SMTPTLSKey = filepath.Clean(SMTPTLSKey)
 
 		if !isFile(SMTPTLSCert) {
-			return fmt.Errorf("[smtp] TLS certificate not found: %s", SMTPTLSCert)
+			return fmt.Errorf("[smtp] TLS certificate not found or readable: %s", SMTPTLSCert)
 		}
 
 		if !isFile(SMTPTLSKey) {
-			return fmt.Errorf("[smtp] TLS key not found: %s", SMTPTLSKey)
+			return fmt.Errorf("[smtp] TLS key not found or readable: %s", SMTPTLSKey)
 		}
 	} else if SMTPRequireTLS {
 		return errors.New("[smtp] TLS cannot be required without an SMTP TLS certificate and key")
@@ -280,7 +289,7 @@ func VerifyConfig() error {
 		SMTPAuthFile = filepath.Clean(SMTPAuthFile)
 
 		if !isFile(SMTPAuthFile) {
-			return fmt.Errorf("[smtp] password file not found: %s", SMTPAuthFile)
+			return fmt.Errorf("[smtp] password file not found or readable: %s", SMTPAuthFile)
 		}
 
 		b, err := os.ReadFile(SMTPAuthFile)
@@ -319,11 +328,11 @@ func VerifyConfig() error {
 		POP3TLSKey = filepath.Clean(POP3TLSKey)
 
 		if !isFile(POP3TLSCert) {
-			return fmt.Errorf("[pop3] TLS certificate not found: %s", POP3TLSCert)
+			return fmt.Errorf("[pop3] TLS certificate not found or readable: %s", POP3TLSCert)
 		}
 
 		if !isFile(POP3TLSKey) {
-			return fmt.Errorf("[pop3] TLS key not found: %s", POP3TLSKey)
+			return fmt.Errorf("[pop3] TLS key not found or readable: %s", POP3TLSKey)
 		}
 	}
 	if POP3TLSCert != "" && POP3TLSKey == "" || POP3TLSCert == "" && POP3TLSKey != "" {
@@ -339,7 +348,7 @@ func VerifyConfig() error {
 		POP3AuthFile = filepath.Clean(POP3AuthFile)
 
 		if !isFile(POP3AuthFile) {
-			return fmt.Errorf("[pop3] password file not found: %s", POP3AuthFile)
+			return fmt.Errorf("[pop3] password file not found or readable: %s", POP3AuthFile)
 		}
 
 		b, err := os.ReadFile(POP3AuthFile)
@@ -410,6 +419,14 @@ func VerifyConfig() error {
 			}
 		}
 	}
+	// load tag filters
+	TagFilters = []autoTag{}
+	if err := loadTagsFromArgs(CLITagsArg); err != nil {
+		return err
+	}
+	if err := loadTagsFromConfig(TagsConfig); err != nil {
+		return err
+	}
 
 	if SMTPAllowedRecipients != "" {
 		restrictRegexp, err := regexp.Compile(SMTPAllowedRecipients)
@@ -418,7 +435,7 @@ func VerifyConfig() error {
 		}
 
 		SMTPAllowedRecipientsRegexp = restrictRegexp
-		logger.Log().Infof("[smtp] only allowing recipients matching the following regexp: %s", SMTPAllowedRecipients)
+		logger.Log().Infof("[smtp] only allowing recipients matching regexp: %s", SMTPAllowedRecipients)
 	}
 
 	if err := parseRelayConfig(SMTPRelayConfigFile); err != nil {
@@ -430,13 +447,28 @@ func VerifyConfig() error {
 		return err
 	}
 
-	if !ReleaseEnabled && SMTPRelayAllIncoming {
-		return errors.New("[smtp] relay config must be set to relay all messages")
+	if !ReleaseEnabled && SMTPRelayAll || !ReleaseEnabled && SMTPRelayMatching != "" {
+		return errors.New("[relay] a relay configuration must be set to auto-relay any messages")
 	}
 
-	if SMTPRelayAllIncoming {
+	if SMTPRelayMatching != "" {
+		if SMTPRelayAll {
+			logger.Log().Warnf("[relay] ignoring smtp-relay-matching when smtp-relay-all is enabled")
+		} else {
+			restrictRegexp, err := regexp.Compile(SMTPRelayMatching)
+			if err != nil {
+				return fmt.Errorf("[relay] failed to compile smtp-relay-matching regexp: %s", err.Error())
+			}
+
+			SMTPRelayMatchingRegexp = restrictRegexp
+			logger.Log().Infof("[relay] auto-relaying new messages to recipients matching \"%s\" via %s:%d",
+				SMTPRelayMatching, SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+		}
+	}
+
+	if SMTPRelayAll {
 		// this deserves a warning
-		logger.Log().Warnf("[smtp] enabling automatic relay of all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
+		logger.Log().Warnf("[relay] auto-relaying all new messages via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 	}
 
 	return nil
@@ -451,7 +483,7 @@ func parseRelayConfig(c string) error {
 	c = filepath.Clean(c)
 
 	if !isFile(c) {
-		return fmt.Errorf("[smtp] relay configuration not found: %s", c)
+		return fmt.Errorf("[smtp] relay configuration not found or readable: %s", c)
 	}
 
 	data, err := os.ReadFile(c)
@@ -469,7 +501,7 @@ func parseRelayConfig(c string) error {
 
 	// DEPRECATED 2024/03/12
 	if SMTPRelayConfig.RecipientAllowlist != "" {
-		logger.Log().Warn("[smtp] relay 'recipient-allowlist' is deprecated, use 'allowed_recipients' instead")
+		logger.Log().Warn("[smtp] relay 'recipient-allowlist' is deprecated, use 'allowed-recipients' instead")
 		if SMTPRelayConfig.AllowedRecipients == "" {
 			SMTPRelayConfig.AllowedRecipients = SMTPRelayConfig.RecipientAllowlist
 		}
@@ -514,9 +546,8 @@ func validateRelayConfig() error {
 
 	logger.Log().Infof("[smtp] enabling message relaying via %s:%d", SMTPRelayConfig.Host, SMTPRelayConfig.Port)
 
-	allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
-
 	if SMTPRelayConfig.AllowedRecipients != "" {
+		allowlistRegexp, err := regexp.Compile(SMTPRelayConfig.AllowedRecipients)
 		if err != nil {
 			return fmt.Errorf("[smtp] failed to compile relay recipient allowlist regexp: %s", err.Error())
 		}
@@ -529,20 +560,17 @@ func validateRelayConfig() error {
 	return nil
 }
 
-// IsFile returns if a path is a file
+// IsFile returns whether a file exists and is readable
 func isFile(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.Mode().IsRegular() {
-		return false
-	}
-
-	return true
+	f, err := os.Open(filepath.Clean(path))
+	defer f.Close()
+	return err == nil
 }
 
 // IsDir returns whether a path is a directory
 func isDir(path string) bool {
 	info, err := os.Stat(path)
-	if os.IsNotExist(err) || !info.IsDir() {
+	if err != nil || os.IsNotExist(err) || !info.IsDir() {
 		return false
 	}
 

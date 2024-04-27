@@ -63,6 +63,17 @@ func InitDB() error {
 
 	config.Database = p
 
+	if sqlDriver == "sqlite" {
+		if !isFile(p) {
+			// try create a file to ensure permissions
+			f, err := os.Create(p)
+			if err != nil {
+				return fmt.Errorf("[db] %s", err.Error())
+			}
+			_ = f.Close()
+		}
+	}
+
 	var err error
 
 	db, err = sql.Open(sqlDriver, dsn)
@@ -73,7 +84,7 @@ func InitDB() error {
 	for i := 1; i < 6; i++ {
 		if err := Ping(); err != nil {
 			logger.Log().Errorf("[db] %s", err.Error())
-			logger.Log().Infof("[db] reconnecting in 5 seconds (%d/5)", i)
+			logger.Log().Infof("[db] reconnecting in 5 seconds (attempt %d/5)", i)
 			time.Sleep(5 * time.Second)
 		} else {
 			continue
@@ -96,6 +107,8 @@ func InitDB() error {
 	if err := dbApplySchemas(); err != nil {
 		return err
 	}
+
+	LoadTagFilters()
 
 	dbFile = p
 	dbLastAction = time.Now()
@@ -127,13 +140,19 @@ func tenant(table string) string {
 	return fmt.Sprintf("%s%s", config.TenantID, table)
 }
 
-// Close will close the database, and delete if a temporary table
+// Close will close the database, and delete if temporary
 func Close() {
+	// on a fatal exit (eg: ports blocked), allow Mailpit to run migration tasks before closing the DB
+	time.Sleep(200 * time.Millisecond)
+
 	if db != nil {
 		if err := db.Close(); err != nil {
 			logger.Log().Warn("[db] error closing database, ignoring")
 		}
 	}
+
+	// allow SQLite to finish closing DB & write WAL logs if local
+	time.Sleep(100 * time.Millisecond)
 
 	if dbIsTemp && isFile(dbFile) {
 		logger.Log().Debugf("[db] deleting temporary file %s", dbFile)

@@ -2,6 +2,37 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.17.1]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Clearer error messages for read/write permission failures ([#281](https://github.com/axllent/mailpit/issues/281))
+
+### Fix
+- Prevent error when two identical tags are added at the exact same time ([#283](https://github.com/axllent/mailpit/issues/283))
+
+
+## [v1.17.0]
+
+### Chore
+- Update caniemail database
+- Update node dependencies
+- Update Go dependencies
+- Auto-rotate thumbnail images based on exif data
+- Replace disintegration/imaging with kovidgoyal/imaging to fix CVE-2023-36308
+- Update API documentation regarding date/time searches & timezones
+- Move Link check & HTML check features out of beta
+- Remove deprecated --disable-html-check option
+
+### Feature
+- Option to auto relay for matching recipient expression only ([#274](https://github.com/axllent/mailpit/issues/274))
+- Add UI settings screen
+
+### Fix
+- Add delay to close database on fatal exit ([#280](https://github.com/axllent/mailpit/issues/280))
+
+
 ## [v1.16.0]
 
 ### Chore

@@ -85,7 +85,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//
 	// # Search messages
 	//
-	// Returns the latest messages matching a search.
+	// Returns messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/), sorted by received date (descending).
 	//
 	//	Produces:
 	//	- application/json
@@ -112,7 +112,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	//	    default: 50
 	//	  + name: tz
 	//	    in: query
-	//	    description: Timezone for `before:` & `after:` queries, eg: "Pacific/Auckland"
+	//	    description: [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` & `after:` searches (eg: "Pacific/Auckland").
 	//	    required: false
 	//	    type: string
 	//
@@ -156,7 +156,7 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 	//
 	// # Delete messages by search
 	//
-	// Delete all messages matching a search.
+	// Delete all messages matching [a search](https://mailpit.axllent.org/docs/usage/search-filters/).
 	//
 	//	Produces:
 	//	- application/json
@@ -168,6 +168,11 @@ func DeleteSearch(w http.ResponseWriter, r *http.Request) {
 	//	    in: query
 	//	    description: Search query
 	//	    required: true
+	//	    type: string
+	//	  + name: tz
+	//	    in: query
+	//	    description: [Timezone identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used specifically for `before:` & `after:` searches (eg: "Pacific/Auckland").
+	//	    required: false
 	//	    type: string
 	//
 	//	Responses:
@@ -636,13 +641,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tos := data.To
-	if len(tos) == 0 {
-		httpError(w, "No valid addresses found")
-		return
-	}
-
-	for _, to := range tos {
+	for _, to := range data.To {
 		address, err := mail.ParseAddress(to)
 
 		if err != nil {
@@ -656,6 +655,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if len(data.To) == 0 {
+		httpError(w, "No valid addresses found")
+		return
+	}
+
 	reader := bytes.NewReader(msg)
 	m, err := mail.ReadMessage(reader)
 	if err != nil {
@@ -666,6 +670,11 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 	froms, err := m.Header.AddressList("From")
 	if err != nil {
 		httpError(w, err.Error())
+		return
+	}
+
+	if len(froms) == 0 {
+		httpError(w, "No From header found")
 		return
 	}
 
@@ -712,7 +721,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := smtpd.Send(from, tos, msg); err != nil {
+	if err := smtpd.Send(from, data.To, msg); err != nil {
 		logger.Log().Errorf("[smtp] error sending message: %s", err.Error())
 		httpError(w, "SMTP error: "+err.Error())
 		return
