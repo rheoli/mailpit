@@ -16,7 +16,6 @@ import (
 	"github.com/axllent/mailpit/internal/logger"
 	"github.com/axllent/mailpit/internal/spamassassin"
 	"github.com/axllent/mailpit/internal/rspamd"
-	"github.com/axllent/mailpit/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 
@@ -397,28 +396,6 @@ func VerifyConfig() error {
 		}
 	}
 
-	SMTPTags = []AutoTag{}
-
-	if SMTPCLITags != "" {
-		args := tools.ArgsParser(SMTPCLITags)
-
-		for _, a := range args {
-			t := strings.Split(a, "=")
-			if len(t) > 1 {
-				tag := tools.CleanTag(t[0])
-				if !ValidTagRegexp.MatchString(tag) || len(tag) == 0 {
-					return fmt.Errorf("[tag] invalid tag (%s) - can only contain spaces, letters, numbers, - & _", tag)
-				}
-				match := strings.TrimSpace(strings.ToLower(strings.Join(t[1:], "=")))
-				if len(match) == 0 {
-					return fmt.Errorf("[tag] invalid tag match (%s) - no search detected", tag)
-				}
-				SMTPTags = append(SMTPTags, AutoTag{Tag: tag, Match: match})
-			} else {
-				return fmt.Errorf("[tag] error parsing tags (%s)", a)
-			}
-		}
-	}
 	// load tag filters
 	TagFilters = []autoTag{}
 	if err := loadTagsFromArgs(CLITagsArg); err != nil {
