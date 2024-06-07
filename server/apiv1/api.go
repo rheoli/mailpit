@@ -74,9 +74,10 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	res.Tags = stats.Tags
 	res.MessagesCount = stats.Total
 
-	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // Search returns the latest messages as JSON
@@ -145,9 +146,10 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	res.Unread = stats.Unread
 	res.Tags = stats.Tags
 
-	bytes, _ := json.Marshal(res)
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // DeleteSearch will delete all messages matching a search
@@ -239,9 +241,10 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(msg)
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(msg); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // DownloadAttachment (method: GET) returns the attachment data
@@ -348,14 +351,10 @@ func GetHeaders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, err := json.Marshal(m.Header)
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(m.Header); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // DownloadRaw (method: GET) returns the full email source as plain text
@@ -542,16 +541,10 @@ func GetAllTags(w http.ResponseWriter, _ *http.Request) {
 	//		200: ArrayResponse
 	//		default: ErrorResponse
 
-	tags := storage.GetAllTags()
-
-	data, err := json.Marshal(tags)
-	if err != nil {
-		httpError(w, err.Error())
-		return
-	}
-
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(data)
+	if err := json.NewEncoder(w).Encode(storage.GetAllTags()); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // SetMessageTags (method: PUT) will set the tags for all provided IDs
@@ -667,18 +660,18 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	froms, err := m.Header.AddressList("From")
+	fromAddresses, err := m.Header.AddressList("From")
 	if err != nil {
 		httpError(w, err.Error())
 		return
 	}
 
-	if len(froms) == 0 {
+	if len(fromAddresses) == 0 {
 		httpError(w, "No From header found")
 		return
 	}
 
-	from := froms[0].Address
+	from := fromAddresses[0].Address
 
 	// if sender is used, then change from to the sender
 	if senders, err := m.Header.AddressList("Sender"); err == nil {
@@ -735,7 +728,7 @@ func ReleaseMessage(w http.ResponseWriter, r *http.Request) {
 func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/html-check Other HTMLCheck
 	//
-	// # HTML check (beta)
+	// # HTML check
 	//
 	// Returns the summary of the message HTML checker.
 	//
@@ -778,16 +771,17 @@ func HTMLCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(checks)
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(checks); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // LinkCheck returns a summary of links in the email
 func LinkCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/link-check Other LinkCheck
 	//
-	// # Link check (beta)
+	// # Link check
 	//
 	// Returns the summary of the message Link checker.
 	//
@@ -828,9 +822,10 @@ func LinkCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(summary)
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(summary); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // RspamdCheck returns a summary of Rspamd results (if enabled)
@@ -887,12 +882,9 @@ func RspamdCheck(w http.ResponseWriter, r *http.Request) {
 func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 	// swagger:route GET /api/v1/message/{ID}/sa-check Other SpamAssassinCheck
 	//
-	// # SpamAssassin check (beta)
+	// # SpamAssassin check
 	//
-	// Returns the SpamAssassin (if enabled) summary of the message.
-	//
-	// NOTE: This feature is currently in beta and is documented for reference only.
-	// Please do not integrate with it (yet) as there may be changes.
+	// Returns the SpamAssassin summary (if enabled) of the message.
 	//
 	//	Produces:
 	//	- application/json
@@ -928,9 +920,10 @@ func SpamAssassinCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bytes, _ := json.Marshal(summary)
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(summary); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // FourOFour returns a basic 404 message
@@ -949,6 +942,21 @@ func httpError(w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, msg)
+}
+
+// httpJSONError returns a basic error message (400 response) in JSON format
+func httpJSONError(w http.ResponseWriter, msg string) {
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("Content-Security-Policy", config.ContentSecurityPolicy)
+	w.WriteHeader(http.StatusBadRequest)
+	e := JSONErrorMessage{
+		Error: msg,
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(e); err != nil {
+		httpError(w, err.Error())
+	}
 }
 
 // Get the start and limit based on query params. Defaults to 0, 50

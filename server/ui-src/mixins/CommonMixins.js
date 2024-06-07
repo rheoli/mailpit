@@ -2,6 +2,7 @@ import axios from 'axios'
 import dayjs from 'dayjs'
 import ColorHash from 'color-hash'
 import { Modal, Offcanvas } from 'bootstrap'
+import {limitOptions} from "../stores/pagination";
 
 // BootstrapElement is used to return a fake Bootstrap element
 // if the ID returns nothing to prevent errors.
@@ -66,12 +67,26 @@ export default {
 			}
 
 			const urlParams = new URLSearchParams(window.location.search)
-			const q = urlParams.get('q').trim()
-			if (q == '') {
+			const q = urlParams.get('q')?.trim()
+			if (!q) {
 				return false
 			}
 
 			return q
+		},
+
+		getPaginationParams: function () {
+			if (!window.location.search) {
+				return null
+			}
+
+			const urlParams = new URLSearchParams(window.location.search)
+			const start = parseInt(urlParams.get('start')?.trim(), 10)
+			const limit = parseInt(urlParams.get('limit')?.trim(), 10)
+			return {
+				start: Number.isInteger(start) && start >= 0 ? start : null,
+				limit: limitOptions.includes(limit) ? limit : null,
+			}
 		},
 
 		// generic modal get/set function
@@ -242,6 +257,9 @@ export default {
 			}
 			if (['zip', 'tar', 'rar', 'bz2', 'gz', 'xz'].includes(ext)) {
 				return 'bi-file-zip-fill'
+			}
+			if (['ics'].includes(ext)) {
+				return 'bi-calendar-event'
 			}
 			if (a.ContentType.match(/^audio\//)) {
 				return 'bi-file-music-fill'

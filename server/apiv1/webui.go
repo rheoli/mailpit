@@ -69,8 +69,8 @@ func WebUIConfig(w http.ResponseWriter, _ *http.Request) {
 	conf.Rspamd = config.EnableRspamd != ""
 	conf.DuplicatesIgnored = config.IgnoreDuplicateIDs
 
-	bytes, _ := json.Marshal(conf)
-
 	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(bytes)
+	if err := json.NewEncoder(w).Encode(conf); err != nil {
+		httpError(w, err.Error())
+	}
 }
