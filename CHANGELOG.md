@@ -2,6 +2,76 @@
 
 Notable changes to Mailpit will be documented in this file.
 
+## [v1.18.5]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+
+### Feature
+- Add pagination & limits to URL parameters ([#303](https://github.com/axllent/mailpit/issues/303))
+
+
+## [v1.18.4]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Clone new Docker images to ghcr.io ([#302](https://github.com/axllent/mailpit/issues/302))
+
+
+## [v1.18.3]
+
+### Chore
+- Update Go dependencies
+- Update node dependencies
+
+### Feature
+- iCalendar (ICS) viewer ([#298](https://github.com/axllent/mailpit/issues/298))
+
+### Fix
+- Add dot stuffing for POP3 ([#300](https://github.com/axllent/mailpit/issues/300))
+
+
+## [v1.18.2]
+
+### Chore
+- Update node dependencies
+
+### Fix
+- Replace invalid Windows username characters in sendmail ([#294](https://github.com/axllent/mailpit/issues/294))
+
+
+## [v1.18.1]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Simplify JSON HTTP responses
+
+### Feature
+- Return queued Message ID in SMTP response ([#293](https://github.com/axllent/mailpit/issues/293))
+
+
+## [v1.18.0]
+
+### Chore
+- Update node dependencies
+- Update Go dependencies
+- Update go-release-action
+- JSON key case-consistency for posted API data (backwards-compatible)
+- Remove function duplication - use common tools.InArray()
+- Improve tag sorting in web UI, ignore casing
+- Replace moment JS library with dayjs
+- Auto-update relative received message times
+
+### Feature
+- API endpoint for sending ([#278](https://github.com/axllent/mailpit/issues/278))
+- Set tagging filters via a config file
+- Search filter support for auto-tagging
+- New search filter prefix `addressed:` includes From, To, Cc, Bcc & Reply-To
+
+
 ## [v1.17.1]
 
 ### Chore
